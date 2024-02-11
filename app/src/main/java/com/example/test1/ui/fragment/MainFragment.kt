@@ -1,5 +1,6 @@
 package com.example.test1.ui.fragment
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.test1.R
 import com.example.test1.di.factory.ViewModelProviderFactory
 import com.example.test1.network.response.Movie
+import com.example.test1.ui.activity.DetailActivity
+import com.example.test1.ui.activity.MainActivity
 import com.example.test1.ui.adapter.MoviesAdapter
 import com.example.test1.ui.adapter.MoviesInterface
 import com.example.test1.ui.base.BaseFragment
@@ -54,6 +57,11 @@ class MainFragment : BaseFragment(), MoviesInterface {
         mainViewModel = ViewModelProvider(this, viewModelProviderFactory)[MainViewModel::class.java]
         setUpViews(view)
         setUpObserver()
+        // fetchData()
+    }
+
+    private fun fetchData() {
+        mainViewModel.getMovies(1)
     }
 
     private fun setUpViews(view: View) {
@@ -78,7 +86,6 @@ class MainFragment : BaseFragment(), MoviesInterface {
                         handleState(it)
                     }
                 }
-                mainViewModel.getMovies(1)
             }
         }
     }
@@ -115,6 +122,6 @@ class MainFragment : BaseFragment(), MoviesInterface {
     }
 
     override fun onStarClick(movie: Movie) {
-
+        startActivity(Intent(activity,DetailActivity::class.java))
     }
 }

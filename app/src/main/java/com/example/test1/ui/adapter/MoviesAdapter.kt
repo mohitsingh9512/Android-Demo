@@ -32,6 +32,7 @@ class MoviesAdapter(private val listener : MoviesInterface) : ListAdapter<BaseDa
         bind(holder as AbstractViewHolder<BaseDataModel>, position)
     }
 
+
     private fun bind(holder: AbstractViewHolder<BaseDataModel>, position: Int) {
         holder.bind(getItem(position))
     }

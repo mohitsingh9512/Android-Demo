@@ -1,15 +1,20 @@
 package com.example.test1.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.test1.network.request.Async
 import com.example.test1.ui.viewholder.uimodel.BaseDataModel
+import com.example.test1.ui.viewholder.uimodel.MoviesDataModel
 import com.example.test1.usecase.MovieUseCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
@@ -26,6 +31,10 @@ class MainViewModel @Inject constructor(private val movieUseCase: MovieUseCase):
     private val _isLoading = MutableStateFlow(false)
     private val _items =  movieUseCase.movies
 
+    init {
+        getMovies(1)
+    }
+
     val uiState: StateFlow<MainUiState> = combine(
          _isLoading, _userMessage, _items
     ) { loading, message, items ->
@@ -39,7 +48,7 @@ class MainViewModel @Inject constructor(private val movieUseCase: MovieUseCase):
             }
 
             is Async.Success -> {
-                MainUiState(
+                 MainUiState(
                     items = items.data,
                     isLoading = loading,
                     userMessage = message
@@ -53,10 +62,12 @@ class MainViewModel @Inject constructor(private val movieUseCase: MovieUseCase):
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(1000),
-        initialValue = MainUiState(isLoading = true)
+                initialValue = MainUiState(isLoading = true)
     )
 
-    suspend fun getMovies(page: Int){
-        movieUseCase.getMovieStream(page)
+    fun getMovies(page: Int){
+        viewModelScope.launch(Dispatchers.IO) {
+            movieUseCase.getMovieStream(page)
+        }
     }
 }
