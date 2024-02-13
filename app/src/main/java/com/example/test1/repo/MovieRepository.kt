@@ -3,11 +3,16 @@ package com.example.test1.repo
 import com.example.test1.extensions.InfoLanguage
 import com.example.test1.network.api.MainApiInterface
 import com.example.test1.network.request.Async
+import com.example.test1.network.response.Movie
 import com.example.test1.persistance.MoviesDao
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 
 class MovieRepository @AssistedInject constructor(
     private val mainApiInterface: MainApiInterface,
@@ -23,11 +28,11 @@ class MovieRepository @AssistedInject constructor(
 
     suspend fun getMovieStream(page: Int) = flow {
         val result = mainApiInterface.getPopularMovies("38a73d59546aa378980a88b645f487fc", infoLanguage.languageCode, page)
+        kotlinx.coroutines.delay(4000)
         if(result.isSuccessful){
             result.body()?.results?.let {
-                // Maybe launch ?
-                moviesDao.insertMovies(it)
                 emit(Async.Success(it))
+                saveToDB(it)
             } ?: run {
                 emit(Async.Error(1))
             }
@@ -38,5 +43,13 @@ class MovieRepository @AssistedInject constructor(
 
     suspend fun getMoviesFromDb()  = flow {
         emit(Async.Success(moviesDao.getMovies()))
+    }
+
+    private fun saveToDB(movies: List<Movie>) {
+        CoroutineScope((SupervisorJob() + Dispatchers.IO)).apply {
+            launch {
+                moviesDao.insertMovies(movies)
+            }
+        }
     }
 }

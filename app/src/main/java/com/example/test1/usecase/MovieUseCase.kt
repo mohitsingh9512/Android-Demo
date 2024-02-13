@@ -45,8 +45,6 @@ class MovieUseCase @Inject constructor(
                 }.collect {
                     _movies.value = it
                 }
-
-
         }
     }
 }
