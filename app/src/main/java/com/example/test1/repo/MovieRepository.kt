@@ -27,18 +27,22 @@ class MovieRepository @AssistedInject constructor(
     }
 
     suspend fun getMovieStream(page: Int) = flow {
-        val result = mainApiInterface.getPopularMovies("38a73d59546aa378980a88b645f487fc", infoLanguage.languageCode, page)
-        kotlinx.coroutines.delay(4000)
-        if(result.isSuccessful){
-            result.body()?.results?.let {
-                emit(Async.Success(it))
-                saveToDB(it)
-            } ?: run {
-                emit(Async.Error(1))
+        try {
+            val result = mainApiInterface.getPopularMovies("38a73d59546aa378980a88b645f487fc", infoLanguage.languageCode, page)
+            if(result.isSuccessful){
+                result.body()?.results?.let {
+                    emit(Async.Success(it))
+                    saveToDB(it)
+                } ?: run {
+                    emit(Async.Error(1))
+                }
+            }else {
+                emit(Async.Error(0))
             }
-        }else {
-            emit(Async.Error(0))
+        }catch (e : Exception) {
+            emit(Async.Error(100, e.message))
         }
+
     }
 
     suspend fun getMoviesFromDb()  = flow {

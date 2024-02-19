@@ -17,12 +17,10 @@ import com.example.test1.R
 import com.example.test1.di.factory.ViewModelProviderFactory
 import com.example.test1.network.response.Movie
 import com.example.test1.ui.activity.DetailActivity
-import com.example.test1.ui.activity.MainActivity
 import com.example.test1.ui.adapter.MoviesAdapter
 import com.example.test1.ui.adapter.MoviesInterface
 import com.example.test1.ui.base.BaseFragment
 import com.example.test1.ui.viewholder.uimodel.BaseDataModel
-import com.example.test1.ui.viewholder.uimodel.MoviesDataModel
 import com.example.test1.viewmodel.MainUiState
 import com.example.test1.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -57,11 +55,6 @@ class MainFragment : BaseFragment(), MoviesInterface {
         mainViewModel = ViewModelProvider(this, viewModelProviderFactory)[MainViewModel::class.java]
         setUpViews(view)
         setUpObserver()
-        // fetchData()
-    }
-
-    private fun fetchData() {
-        mainViewModel.getMovies(1)
     }
 
     private fun setUpViews(view: View) {
@@ -91,18 +84,23 @@ class MainFragment : BaseFragment(), MoviesInterface {
     }
 
     private fun handleState(it: MainUiState){
-        loadingState(it.isLoading)
-        handleError(it.userMessage)
-        handleSuccess(it.items)
+        when(it){
+            is MainUiState.Error -> handleError(it.errorCode, it.userMessage)
+            is MainUiState.Loading -> loadingState(it.isLoading)
+            is MainUiState.SuccessItems -> handleSuccess(it.items)
+            is MainUiState.None -> {}
+        }
     }
 
     private fun handleSuccess(items: List<BaseDataModel>) {
+        loadingState(false)
         if(items.isNotEmpty())
             moviesAdapter?.submitList(items)
     }
 
-    private fun handleError(it: Int?) {
-        if(it != null) Toast.makeText(context, "Error ${it}", Toast.LENGTH_SHORT).show()
+    private fun handleError(errorCode: Int?, errorMessage: String?) {
+        loadingState(false)
+        if(errorCode != null) Toast.makeText(context, "Error ${errorCode} $errorMessage", Toast.LENGTH_SHORT).show()
     }
 
     private fun loadingState(isLoading: Boolean) {
@@ -111,6 +109,10 @@ class MainFragment : BaseFragment(), MoviesInterface {
         }else {
             progress?.visibility = View.GONE
         }
+    }
+
+    private fun fetchPageData(page: Int) {
+        mainViewModel.getMovies(page)
     }
 
     companion object {

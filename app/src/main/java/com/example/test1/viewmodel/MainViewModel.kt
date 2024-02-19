@@ -18,51 +18,52 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 
-data class MainUiState(
-    val items: List<BaseDataModel> = emptyList(),
-    val isLoading: Boolean = false,
-    val userMessage: Int? = null,
-    val initial: Boolean = false
-)
+/*
+    List all possible states of your respective UI Screen
+ */
+sealed class MainUiState {
+    data class SuccessItems(val items: List<BaseDataModel> = emptyList()) : MainUiState()
+    data class Error(val errorCode: Int? = null, val userMessage: String? = null) : MainUiState()
+    data class Loading(val isLoading: Boolean) : MainUiState()
+    data object None : MainUiState()
+}
 
 class MainViewModel @Inject constructor(private val movieUseCase: MovieUseCase): ViewModel() {
 
     private val _userMessage = MutableStateFlow(null)
     private val _isLoading = MutableStateFlow(false)
-    private val _items =  movieUseCase.movies
+    private val _result =  movieUseCase.movies
 
     init {
         getMovies(1)
     }
 
     val uiState: StateFlow<MainUiState> = combine(
-         _isLoading, _userMessage, _items
-    ) { loading, message, items ->
-        when(items){
+         _isLoading, _userMessage, _result
+    ) { loading, message, result ->
+        when(result){
             Async.Loading -> {
-                MainUiState(isLoading = true)
+                MainUiState.Loading(isLoading = true)
             }
 
             is Async.Error -> {
-                MainUiState(userMessage = items.errorCode)
+                MainUiState.Error(errorCode = result.errorCode)
             }
 
             is Async.Success -> {
-                 MainUiState(
-                    items = items.data,
-                    isLoading = loading,
-                    userMessage = message
-                )
+                 MainUiState.SuccessItems(
+                    items = result.data
+                 )
             }
 
             is Async.None -> {
-                MainUiState(initial = true)
+                MainUiState.None
             }
         }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(1000),
-                initialValue = MainUiState(isLoading = true)
+                initialValue = MainUiState.Loading(isLoading = true)
     )
 
     fun getMovies(page: Int){
